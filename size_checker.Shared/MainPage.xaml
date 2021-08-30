@@ -8,8 +8,36 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <NavigationView IsBackButtonVisible="Collapsed" IsSettingsVisible="False">
 
+        <NavigationView IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="False"
+                        MenuItemsSource="{x:Bind NavItems, Mode=OneWay}">
+
+
+            <NavigationView.PaneFooter>
+
+                <StackPanel HorizontalAlignment="Stretch"
+							Orientation="Vertical">
+
+                    <NavigationViewList x:Name="NavFooter"
+										IsItemClickEnabled="True"
+										ItemClick="OnAddButtonClick">
+
+                        <NavigationViewList.Items>
+
+                            <NavigationViewItem x:Name="AddButton"
+												x:Uid="AddButton"
+                                                Content="Add Source">
+                                <NavigationViewItem.Icon>
+                                    <SymbolIcon Symbol="Add" />
+                                </NavigationViewItem.Icon>
+                            </NavigationViewItem>
+                        </NavigationViewList.Items>
+                    </NavigationViewList>
+                </StackPanel>
+            </NavigationView.PaneFooter>
         </NavigationView>
     </Grid>
+
+
 </Page>
