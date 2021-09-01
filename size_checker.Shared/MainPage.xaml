@@ -27,7 +27,7 @@
 
                             <NavigationViewItem x:Name="AddButton"
 												x:Uid="AddButton"
-                                                Content="Add Source">
+                                                Content="Add Folder">
                                 <NavigationViewItem.Icon>
                                     <SymbolIcon Symbol="Add" />
                                 </NavigationViewItem.Icon>
@@ -36,7 +36,27 @@
                     </NavigationViewList>
                 </StackPanel>
             </NavigationView.PaneFooter>
+
+            <NavigationView.Header>Content</NavigationView.Header>
+
+            <Frame x:Name="contentFrame">
+                <Pivot>
+                    <PivotItem Header="All">
+                        <TextBlock Text="all emails go here." />
+                    </PivotItem>
+                    <PivotItem Header="Unread">
+                        <TextBlock Text="unread emails go here." />
+                    </PivotItem>
+                    <PivotItem Header="Flagged">
+                        <TextBlock Text="flagged emails go here." />
+                    </PivotItem>
+                    <PivotItem Header="Urgent">
+                        <TextBlock Text="urgent emails go here." />
+                    </PivotItem>
+                </Pivot>
+            </Frame>
         </NavigationView>
+
     </Grid>
 
 

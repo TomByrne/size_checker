@@ -4,6 +4,10 @@ using System.Collections.ObjectModel;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using System.IO;
+using Newtonsoft.Json;
+using Windows.UI.Xaml;
+using size_checker.ViewModel;
+using System.ComponentModel;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -14,57 +18,20 @@ namespace size_checker
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        public SourcesModel SourcesModel = SourcesModel.instance;
 
-        public ObservableCollection<Source> Sources { get; set; }
         public ObservableCollection<NavigationViewItemBase> NavItems { get; set; }
-
-        ApplicationDataCompositeValue SourcesData;
-
-        String SourceDataKey = "SourceData";
 
         public MainPage()
         {
             this.InitializeComponent();
             NavItems = new ObservableCollection<NavigationViewItemBase>();
-            this.SearchForSources();
-        }
 
-        void SearchForSources()
-        {
-
-            Sources = new ObservableCollection<Source>();
-
-            DriveInfo[] drives = DriveInfo.GetDrives();
-            foreach (DriveInfo drive in drives)
-            {
-                if (!drive.IsReady) continue;
-
-                String Name = drive.Name + " " + (drive.IsReady ? drive.VolumeLabel : "<Unavailable>");
-                Symbol Glyph;
-                if (!drive.IsReady)
-                {
-                    Glyph = Symbol.DisconnectDrive;
-                }
-                else
-                {
-                    switch (drive.DriveType)
-                    {
-                        case DriveType.Network:
-                            Glyph = Symbol.World;
-                            break;
-
-                        default:
-                            Glyph = Symbol.MapDrive;
-                            break;
-                    }
-                }
-                Sources.Add(new Source { Name = Name, Glyph = Glyph, Tooltip = Name, IsEnabled = drive.IsReady });
-            }
-
+            SourcesModel.PropertyChanged += new PropertyChangedEventHandler((object sender, PropertyChangedEventArgs e) => GenerateNavItems());
             GenerateNavItems();
         }
 
-        async void OnAddButtonClick(object sender, ItemClickEventArgs e)
+        async void OnAddButtonClick(object sender, RoutedEventArgs e)
         {
             var folderPicker = new FolderPicker();
             folderPicker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
@@ -73,7 +40,7 @@ namespace size_checker
             if (pickedFolder != null)
             {
                 Console.WriteLine(pickedFolder.DisplayName);
-                Sources.Add(new Source { Name = pickedFolder.Path, Glyph = Symbol.Folder, Tooltip = pickedFolder.Path, IsEnabled = true });
+                SourcesModel.AddLocalFolder(pickedFolder);
                 GenerateNavItems();
             }
             else
@@ -87,18 +54,89 @@ namespace size_checker
         {
             NavItems.Clear();
 
-            NavItems.Add(new NavigationViewItemHeader { Content = "Sources"});
-
-            foreach (Source Source in Sources)
+            if (SourcesModel.Drives.Count > 0)
             {
-                NavItems.Add(new NavigationViewItem
+                NavItems.Add(new NavigationViewItemHeader { Content = "Drives" });
+
+                foreach (Source Source in SourcesModel.Drives)
                 {
-                    Content = Source.Name,
-                    Icon = new SymbolIcon(Source.Glyph),
-                    IsEnabled = Source.IsEnabled,
+                    NavItems.Add(SourceToNav(Source));
+                }
+            }
+
+            if (SourcesModel.Sources.Count > 0)
+            {
+                NavItems.Add(new NavigationViewItemHeader { Content = "Folders" });
+
+                foreach (Source Source in SourcesModel.Sources)
+                {
+                    NavItems.Add(SourceToNav(Source));
+                }
+            }
+
+        }
+
+        static NavigationViewItemBase SourceToNav(Source Source)
+        {
+            String Name = Source.Name;
+            String Info = null;
+            Symbol IconGlyph;
+            bool IsEnabled = true;
+
+            switch (Source)
+            {
+                case LocalDriveSource drive:
+                    Info = drive.Path;
+                    switch (drive.Type)
+                    {
+                        case DriveType.Network:
+                            IconGlyph = Symbol.World;
+                            break;
+
+                        default:
+                            IconGlyph = Symbol.MapDrive;
+                            break;
+                    }
+                    break;
+
+                case LocalFolderSource folder:
+                    IconGlyph = Symbol.Folder;
+                    Info = folder.Path;
+                    break;
+
+                default:
+                    throw new Exception("Unknown Source Type");
+            }
+
+            if(Name == null && Info != null)
+            {
+                Name = Info;
+                Info = null;
+            }
+
+            StackPanel panel = new StackPanel();
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = Name
+            });
+
+            if(Info != null)
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Text = Info,
+                    FontSize = 10,
+                    TextWrapping = TextWrapping.Wrap
                 });
             }
 
+            return new NavigationViewItem
+            {
+                Content = panel,
+                Icon = new SymbolIcon(IconGlyph),
+                IsEnabled = IsEnabled
+            };
         }
     }
 
